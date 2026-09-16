@@ -79,12 +79,52 @@ digistack-bank-v8.ear
 📝 **Example inside `application.xml`:**
 
 ```xml
-<module>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE application PUBLIC
+  "-//Sun Microsystems, Inc.//DTD J2EE Application 1.3//EN"
+  "http://java.sun.com/dtd/application_1_3.dtd">
+
+<application>
+
+  <!-- The display name shown in Admin Console -->
+  <display-name>DigiStack Bank v8</display-name>
+
+  <!-- Module 1: Internet Banking Web Module -->
+  <module>
     <web>
-        <web-uri>DigiStackWeb.war</web-uri>
-        <context-root>/bank</context-root>
+      <!-- Which WAR file inside the EAR -->
+      <web-uri>DigiStackWeb.war</web-uri>
+
+      <!-- The URL path customers use to reach this module -->
+      <!-- https://digistackbank.com/digistack -->
+      <context-root>/digistack</context-root>
     </web>
-</module>
+  </module>
+
+  <!-- Module 2: Payments Module -->
+  <module>
+    <web>
+      <web-uri>DigiStackPayments.war</web-uri>
+      <!-- https://digistackbank.com/payments -->
+      <context-root>/payments</context-root>
+    </web>
+  </module>
+
+  <!-- Module 3: Customer Module -->
+  <module>
+    <web>
+      <web-uri>DigiStackCustomer.war</web-uri>
+      <!-- https://digistackbank.com/customer -->
+      <context-root>/customer</context-root>
+    </web>
+  </module>
+
+  <!-- Module 4: EJB Module (Business Logic) -->
+  <module>
+    <ejb>DigiStackEJB.jar</ejb>
+  </module>
+
+</application>
 ```
 
 **Meaning:** *"There is a module called DigiStackWeb.war. Users reach it at `/bank`."*
@@ -102,7 +142,50 @@ digistack-bank-v8.ear
 - This file has **IBM-only settings**:
   - **Security role** to user/group mapping
   - **Virtual Host** (which port/hostname serves the app)
+  - 
+📝 **Example inside `ibm-application-bnd.xml`:**
 
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<application-bnd
+    xmlns="http://websphere.ibm.com/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://websphere.ibm.com/xml/ns/javaee
+    http://websphere.ibm.com/xml/ns/javaee/ibm-application-bnd_1_2.xsd"
+    version="1.2">
+
+  <!-- Module 1: Internet Banking on default_host -->
+  <!-- This means: respond on port 80 (HTTP) and port 443 (HTTPS) -->
+  <module name="DigiStackWeb.war">
+    <web-ext xmlns="http://websphere.ibm.com/xml/ns/javaee"
+             virtual-host="default_host"/>
+  </module>
+
+  <!-- Module 2: Payments on default_host -->
+  <module name="DigiStackPayments.war">
+    <web-ext xmlns="http://websphere.ibm.com/xml/ns/javaee"
+             virtual-host="default_host"/>
+  </module>
+
+  <!-- Module 3: Customer on default_host -->
+  <module name="DigiStackCustomer.war">
+    <web-ext xmlns="http://websphere.ibm.com/xml/ns/javaee"
+             virtual-host="default_host"/>
+  </module>
+
+  <!-- Security Role Binding -->
+  <!-- Maps the "Administrator" role to WAS group "DigiStackAdmins" -->
+  <security-role name="Administrator">
+    <group name="DigiStackAdmins"/>
+  </security-role>
+
+  <!-- Maps the "Customer" role to WAS group "DigiStackCustomers" -->
+  <security-role name="Customer">
+    <group name="DigiStackCustomers"/>
+  </security-role>
+
+</application-bnd>
+```
 > 🏠 **Real-life example:**
 > - `application.xml` = the **universal packing list** (any courier understands)
 > - `ibm-application-bnd.xml` = **special delivery instructions for IBM's courier only**
