@@ -59,7 +59,7 @@ You only need to remember 3 objects:
 
 ## 4. Installing an App — The 5 Steps
 
-### Step 1: Tell it where the EAR file is
+### Step 1: Tell it where the EAR file is in the Script
 
 ```python
 earPath = '/deploy/staging/digistack-bank-v8.ear'
@@ -71,6 +71,23 @@ earPath = '/deploy/staging/digistack-bank-v8.ear'
 
 ```python
 AdminApp.install(earPath, '[options]')
+```
+This single command does what all the Admin Console wizard steps do
+```
+AdminApp.install(
+    earPath,
+    '[-appname digistack-bank-v8'
+    ' -cluster DigiStackCluster'
+    ' -MapModulesToServers [[ DigiStackWeb DigiStackWeb.war,WEB-INF/web.xml WebSphere:cluster=DigiStackCluster ]'
+    '                        [ DigiStackPayments DigiStackPayments.war,WEB-INF/web.xml WebSphere:cluster=DigiStackCluster ]'
+    '                        [ DigiStackCustomer DigiStackCustomer.war,WEB-INF/web.xml WebSphere:cluster=DigiStackCluster ]]'
+    ' -MapWebModToVH [[ DigiStackWeb DigiStackWeb.war,WEB-INF/web.xml default_host ]'
+    '                  [ DigiStackPayments DigiStackPayments.war,WEB-INF/web.xml default_host ]'
+    '                  [ DigiStackCustomer DigiStackCustomer.war,WEB-INF/web.xml default_host ]]'
+    ' -contextroot /digistack'
+    ' -distributeApp'
+    ' -nouseMetaDataFromBinary]'
+)
 ```
 
 Options explained simply:
@@ -114,6 +131,81 @@ AdminControl.invoke(appManager, 'startApplication', 'digistack-bank-v8')
 
 - Nobody types commands one by one in banking.
 - They write **one script file** and run it once.
+
+### Script for Deploy the APP "deploy_digistack.py"
+```
+#!/usr/bin/env jython
+# DigiStack Bank — Production Deployment Script
+# Usage: wsadmin.sh -lang jython -f deploy_digistack.py
+# Author: WAS Admin Team | Change: CHG0012345
+
+import sys
+
+# ─── CONFIGURATION ───────────────────────────────────────────
+APP_NAME    = 'digistack-bank-v8'
+EAR_PATH    = '/deploy/staging/digistack-bank-v8.ear'
+CLUSTER     = 'DigiStackCluster'
+CELL        = 'DigiStackCell01'
+NODE1       = 'Node01'
+NODE2       = 'Node02'
+VHOST       = 'default_host'
+# ─────────────────────────────────────────────────────────────
+
+print("=== DigiStack Bank Deployment Started ===")
+print("App     : " + APP_NAME)
+print("EAR     : " + EAR_PATH)
+print("Cluster : " + CLUSTER)
+
+# 1. Check if app already exists — stop and uninstall if so
+existingApps = AdminApp.list()
+if APP_NAME in existingApps:
+    print(">>> App exists. Stopping...")
+    appMgr = AdminControl.queryNames(
+        'cell=%s,node=%s,type=ApplicationManager,*' % (CELL, NODE1)
+    )
+    try:
+        AdminControl.invoke(appMgr, 'stopApplication', APP_NAME)
+        print(">>> App stopped.")
+    except:
+        print(">>> App was not running.")
+    
+    print(">>> Uninstalling old version...")
+    AdminApp.uninstall(APP_NAME)
+    AdminConfig.save()
+    print(">>> Uninstall complete.")
+
+# 2. Install new EAR
+print(">>> Installing " + EAR_PATH)
+AdminApp.install(
+    EAR_PATH,
+    '[-appname %s -cluster %s -distributeApp -nouseMetaDataFromBinary]' % (APP_NAME, CLUSTER)
+)
+print(">>> Installation complete.")
+
+# 3. Save config
+AdminConfig.save()
+print(">>> Configuration saved.")
+
+# 4. Sync nodes
+print(">>> Synchronizing Node01...")
+sync1 = AdminControl.completeObjectName('type=NodeSync,node=%s,*' % NODE1)
+AdminControl.invoke(sync1, 'sync')
+
+print(">>> Synchronizing Node02...")
+sync2 = AdminControl.completeObjectName('type=NodeSync,node=%s,*' % NODE2)
+AdminControl.invoke(sync2, 'sync')
+
+print(">>> Node sync complete.")
+
+# 5. Start application
+print(">>> Starting application...")
+appMgr = AdminControl.queryNames(
+    'cell=%s,node=%s,type=ApplicationManager,*' % (CELL, NODE1)
+)
+AdminControl.invoke(appMgr, 'startApplication', APP_NAME)
+print(">>> Application started successfully.")
+print("=== Deployment Complete ===")
+```
 
 ### The script's logic (remember this flow):
 
