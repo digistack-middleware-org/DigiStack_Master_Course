@@ -446,3 +446,178 @@ Total time from alert to resolution: ~15 minutes
 
 > **A 2 AM outage doesn't test what you know — it tests whether you follow the flowchart instead of panicking.**
 > IHS → plugin → WAS → logs → fix → verify → log. 15 minutes. Be the senior. 🏆
+---
+# 🎯 HTTP Status Codes in IHS & WAS — Simple Guide
+
+| Code | Meaning | Layer | Your Action |
+|------|---------|-------|-------------|
+| **200** ✅ | Success | IHS or WAS | Nothing — life is good |
+| **301** | Permanent Redirect | IHS | Verify config is correct |
+| **302** | Temp Redirect | Usually WAS | Normal app behavior |
+| **403** 🚫 | Forbidden | IHS | Check permissions / IP rules |
+| **404** 🔍 | Not Found | IHS or WAS | Check URL, deploy, plugin |
+| **500** 💥 | App Crashed | WAS | Check `SystemOut.log` |
+| **502** ⚠️ | Bad Response from Backend | Plugin → IHS | Check WAS crash / timeout |
+| **503** 🚨 | Backend Unavailable | Plugin → IHS | Check WAS down / thread pool ⚠️ |
+---
+## Simple Explination
+
+---
+
+## ✅ 200 — Success
+
+| | |
+|---|---|
+| **Meaning** | Everything worked fine. |
+| **Where** | IHS or WAS. |
+| **Your action** | Nothing. 😌 |
+
+**Example:** You open your balance page, money shows. Done.
+
+> 🧠 **Remember:** 200 = All good. Move on.
+
+---
+
+## 🔁 301 — Permanent Redirect
+
+| | |
+|---|---|
+| **Meaning** | The URL has **moved forever** to a new address. |
+| **Where** | Mostly IHS. |
+| **Your action** | Check IHS config is correct (e.g., `httpd.conf` rewrite rules). |
+
+**Example:** Bank moved from `oldbank.com` to `newbank.com`. Old address always points to the new one. **Even your bookmarks work.**
+
+> 🧠 **Remember:** 301 = Moved house permanently. Update your address book.
+
+---
+
+## 🔁 302 — Temporary Redirect
+
+| | |
+|---|---|
+| **Meaning** | Sent to another page **just for now**. |
+| **Where** | Usually WAS (your app does it). |
+| **Your action** | Normal. No issue. ✅ |
+
+**Example:** You try to open your account page without logging in → app redirects you to the login page. After login, back to normal.
+
+> 🧠 **Remember:** 302 = Temporarily away. Will be back.
+
+---
+
+## 🚫 403 — Forbidden
+
+| | |
+|---|---|
+| **Meaning** | "I know who you are, but you are **not allowed** here." |
+| **Where** | IHS. |
+| **Your action** | Check permissions, IP blocking rules in IHS config. |
+
+**Example:** You try to enter the bank's staff-only room. You're a valid customer, but this room is not for you. The guard says **NO**.
+
+**Common causes:**
+```text
+✔ Your IP is blocked
+✔ File/folder permissions wrong
+✔ IHS security rules deny the request
+```
+
+> 🧠 **Remember:** 403 = The door is locked AND the guard knows why.
+
+---
+
+## 🔍 404 — Not Found
+
+| | |
+|---|---|
+| **Meaning** | The page/URL **does not exist**. |
+| **Where** | Could be IHS **or** WAS. |
+| **Your action** | • Check the URL is typed correctly<br>• Check app is deployed properly in WAS<br>• Check plugin is routing to the right app |
+
+**Example:** You ask for a "Gold Savings Account" form, but the bank never made that form. It doesn't exist.
+
+> 🧠 **Remember:** 404 = You asked for something that isn't there.
+
+---
+
+## 💥 500 — Internal Server Error
+
+| | |
+|---|---|
+| **Meaning** | The application **crashed while running**. |
+| **Where** | WAS. |
+| **Your action** | Check `SystemOut.log` (and `SystemErr.log`) in WAS logs. **Look for stack traces.** |
+
+**Example:** You ask for a loan, and the officer's computer crashes mid-process. The problem is **inside the office (WAS)**, not at the door.
+
+> 🔑 **Key point:** 500 = The app itself has a bug or error. Look at logs.
+
+> 🧠 **Remember:** 500 = The officer fainted at his desk.
+
+---
+
+## 🔌 502 — Bad Gateway
+
+| | |
+|---|---|
+| **Meaning** | IHS asked WAS for an answer. WAS gave a **bad or broken answer** (or crashed mid-way). |
+| **Where** | Plugin → IHS. |
+| **Your action** | • Check if WAS crashed<br>• Check timeouts<br>• Check WAS logs |
+
+**Example:** The receptionist (plugin) asks the officer (WAS) a question. The officer gives a **nonsense answer or collapses**. Receptionist says: *"Sorry, I got a bad response."*
+
+> 🧠 **Remember:** 502 = The middleman got a bad answer from the backend.
+
+---
+
+## ⚠️ 503 — Service Unavailable
+
+| | |
+|---|---|
+| **Meaning** | WAS is **completely down or too busy**. Cannot take requests at all. |
+| **Where** | Plugin → IHS. |
+| **Your action** | • Is WAS running? Check server status<br>• Check thread pool (all workers busy?)<br>• Restart WAS if needed |
+
+**Example:** Bank is **closed for the day**, or the queue is so long the guard **stops letting people in**. *"Come back later."*
+
+> 🧠 **Remember:** 503 = Backend is dead or full. **Most serious of the 5xx errors.**
+
+---
+
+## 🗂️ The Deck at a Glance (Memory Hooks Only)
+
+| Code | Memory Hook |
+|------|-------------|
+| 200 ✅ | All good. Move on. |
+| 301 🔁 | Moved house **permanently**. |
+| 302 🔁 | Away **temporarily**. Will be back. |
+| 403 🚫 | Guard knows you — still says NO. |
+| 404 🔍 | That thing doesn't exist. |
+| 500 💥 | Officer fainted at his desk. |
+| 502 🔌 | Middleman got a **bad answer**. |
+| 503 ⚠️ | Backend **dead or full**. Worst one. |
+
+---
+
+## ❓ Quick Self-Test 🎯
+
+1. Redirect after login — 301 or 302? Why?
+2. 404 appears with no deployment — which file do you diff first?
+3. Receptionist asks the officer, officer collapses mid-sentence — which code?
+
+<details>
+<summary>👉 Click for Answers</summary>
+
+1. **302** — it's temporary/conditional (you're only redirected because you're not logged in). 301 is for *forever* moves like domain changes.
+2. **plugin-cfg.xml** (UriGroup section) — then httpd.conf, per Part 12 Q2.
+3. **502** — bad/incomplete answer from backend. (If he refuses to even come to the desk → 503.)
+
+</details>
+
+---
+
+## 🔟 One-Line Summary
+
+> **Eight codes. Eight cards. Each one tells you the layer, the log, and the fix — before you even type a command.**
+> Master the deck, and production errors stop being surprises. They become checklists. 🃏🏆
