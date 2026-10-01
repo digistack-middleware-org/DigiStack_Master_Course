@@ -5,7 +5,7 @@
 | Building | Data centre | Region |
 | Floor/Room | Zone / separate DC area | Availability Zone (AZ) |
 | Rack (physical hardware) | The big mainframe box | Physical host (invisible to you) |
-| Your slice | LPAR | EC2 Instance |
+| Your slice | LPAR (Logical Partision)| EC2 Instance |
 
 ### Q1: "What is the difference between vertical and horizontal clustering and which does your bank use in production?"
 ```
