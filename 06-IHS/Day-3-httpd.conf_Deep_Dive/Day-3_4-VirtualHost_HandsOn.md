@@ -514,5 +514,17 @@ cp httpd.conf.bkp_<timestamp> httpd.conf
 /opt/IBM/HTTPServer/bin/apachectl configtest
 /opt/IBM/HTTPServer/bin/apachectl graceful
 curl -k https://www.citibank.co.in
+```
+---
 
+# 🖥️ Admin Console Steps — Verify & Edit
 
+You can view the result of your change via Admin Console:
+```
+Admin Console
+→ Servers
+  → Web Servers
+    → webserver1
+      → Configuration
+        → Edit Configuration File
+```
