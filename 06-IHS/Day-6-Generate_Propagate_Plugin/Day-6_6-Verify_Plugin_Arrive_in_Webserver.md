@@ -185,3 +185,51 @@ Re-run the `curl` command and watch the log. **Expected:** a new line like:
 
 > [!TIP]
 > 🎉 If all checks pass, your IBM HTTP Server is fully integrated with the WebSphere ND cell — user traffic now flows: **Client → IHS (port 80) → Plugin → WAS Cluster → back to client**.
+---
+# 📊 COMPLETE PICTURE — Session Lifecycle in One Diagram
+```
+         WHAT YOU DID TODAY (Step by Step)
+
+┌─────────────────────────────────────────────────────────┐
+│                     WAS CONSOLE                         │
+│                                                         │
+│  STEP 1: Create Web Server Definition                   │
+│  "WAS now knows IHS exists at 192.168.1.10"            │
+│                     │                                   │
+│  STEP 2: Generate Plugin                                │
+│  "WAS writes plugin-cfg.xml with all routing rules"    │
+│                     │                                   │
+│  STEP 3: Propagate Plugin                               │
+│  "plugin-cfg.xml COPIED to IHS server"                 │
+│                     │                                   │
+│  STEP 4A: Install App → Map to Cluster + webserver1    │
+│  "App deployed, IHS told about this app"               │
+│                     │                                   │
+│  STEP 4B: Generate + Propagate again                   │
+│  "Plugin updated with new app's URIs"                  │
+└─────────────────────────────────────────────────────────┘
+
+RESULT:
+
+USER BROWSER
+    │
+    │  GET /netbanking/login.jsp
+    ▼
+  IHS (192.168.1.10, Port 80)
+  [Reads: /opt/IBM/HTTPServer/Plugins/plugin-cfg.xml]
+    │
+    │  "Plugin says: /netbanking/* → go to PaymentCluster"
+    ▼
+  PLUGIN (inside IHS process)
+    │
+    │  "Round-robin → JVM1 at 192.168.1.30:9080"
+    ▼
+  WAS JVM1 (192.168.1.30, Port 9080)
+  [NetBankingApp running here]
+    │
+    │  App processes request → creates session → returns HTML
+    ▼
+  PLUGIN → IHS → BROWSER
+
+  User sees: NetBanking Login Page ✅
+```
