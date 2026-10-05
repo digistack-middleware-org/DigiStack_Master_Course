@@ -202,3 +202,24 @@ Cloning a WAS profile by copying it wholesale can duplicate the **CloneID**:
 3. What does the plugin do when it reads the CloneID?
 4. What happens when the JVM owning the session crashes?
 5. Why must CloneIDs be unique across all JVMs in the cell?
+
+---
+# View CloneID of a JVM
+```
+Admin Console
+  → Servers → Server Types → WebSphere Application Servers
+    → Click was1_PaymentCluster_server1
+      → "Web Container" (under Container Settings in left panel)
+        → Look for "Session management"
+          → You will see the Clone ID used for this server
+```
+## Change CloneID (if two JVMs accidentally have the same one)
+```
+Admin Console
+  → Servers → Server Types → WebSphere Application Servers
+    → Click the server
+      → Web Container → Session Management
+        → Uncheck "Enable cookies"... wait — look for Clone ID field
+          → Change it to a unique value
+            → Save → Sync nodes → Regenerate and propagate plugin
+```
